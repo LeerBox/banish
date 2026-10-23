@@ -3,7 +3,9 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
-## [Unreleased]
+## [1.1.0] - 2026-10-24
+
+Banish now works on **TikTok LIVE**.
 
 ### Added
 - **LIVE support.** Block the streamer from the LIVE header (next to the share button), or any chatter from the LIVE chat. Chat names only show display names, so a small page helper (`main.js`) reads each chatter's real @username.
