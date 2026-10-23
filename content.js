@@ -56,6 +56,8 @@
   }
 
   const exactText = (el, re) => re.test((el.textContent || '').trim());
+  // Must be defined before the worker branch below returns (consts aren't hoisted).
+  const isVisible = (el) => !!(el && el.getClientRects().length);
 
   function usernameFromHref(href) {
     const m = /\/@([^/?#]+)/.exec(href || '');
@@ -76,8 +78,6 @@
       if (res && res.id) runWorker(res.id);
     });
   } catch (_) { /* extension reloaded */ }
-
-  const isVisible = (el) => !!(el && el.getClientRects().length);
 
   function isBlockedProfile() {
     return [...document.querySelectorAll('button, [role="button"]')]
