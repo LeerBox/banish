@@ -72,7 +72,8 @@
   height: 40px;
   min-width: 40px;
   max-width: 40px;
-  padding: 0 10px;
+  /* 1px border + 9px padding + 20px icon + 9px + 1px = 40px → icon exactly centred */
+  padding: 0 9px;
   justify-content: flex-start;
   border-radius: 999px;
   border: 1px solid var(--bn-line);
