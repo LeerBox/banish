@@ -5,6 +5,12 @@
 <h1 align="center">Banish</h1>
 <p align="center"><b>Quick block for TikTok</b>: one click marks a video <i>Not interested</i> and blocks its account.</p>
 <p align="center">Idea &amp; design by <b>LeerBox</b></p>
+<p align="center">
+  <a href="https://github.com/LeerBox/banish/releases/latest"><img src="https://img.shields.io/github/v/release/LeerBox/banish?label=release&color=fe2c55" alt="Latest release"></a>
+  <a href="https://github.com/LeerBox/banish/releases"><img src="https://img.shields.io/github/downloads/LeerBox/banish/total?color=25f4ee" alt="Downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/LeerBox/banish?color=555" alt="License"></a>
+</p>
+<p align="center"><a href="https://github.com/LeerBox/banish/releases/latest"><b>⬇ Download the latest version</b></a></p>
 
 ---
 
@@ -25,7 +31,7 @@
 | Search results | ⊘ next to the author name on each card. |
 
 ## Install
-1. Download this repository (**Code → Download ZIP**) and unzip it, or `git clone` it.
+1. Download **banish-vX.Y.Z.zip** from the [latest release](https://github.com/LeerBox/banish/releases/latest) and unzip it.
 2. Open `chrome://extensions` (or `edge://extensions`).
 3. Turn on **Developer mode**.
 4. Click **Load unpacked** and pick the folder.
@@ -41,6 +47,14 @@ Nothing is sent anywhere else: the list of blocked accounts stays in your browse
 - Set TikTok's language to **English**: the block flow finds buttons by their text ("Block" / "Unblock").
 - To unblock someone, open their profile on TikTok and press **Unblock**.
 - Banish is an independent project and is not affiliated with TikTok or ByteDance.
+
+## Releasing (maintainers)
+1. Bump `version` in `manifest.json`.
+2. Add a `## [x.y.z] - date` section at the top of `CHANGELOG.md`.
+3. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
+
+GitHub Actions checks the version, validates the code, builds `banish-vx.y.z.zip` with a SHA-256 checksum,
+and publishes the release with notes taken from the changelog. Tags with a suffix (e.g. `v1.1.0-beta.1`) become pre-releases.
 
 ## Author
 Created by **LeerBox**: idea, concept and design.

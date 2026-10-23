@@ -1,0 +1,85 @@
+# Push a tag like v1.2.0 → this builds the extension zip and publishes a GitHub release.
+# Release notes come from the matching section of CHANGELOG.md.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check tag matches manifest version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          MANIFEST=$(jq -r .version manifest.json)
+          if [ "$VERSION" != "$MANIFEST" ]; then
+            echo "::error file=manifest.json::Tag $GITHUB_REF_NAME does not match manifest version $MANIFEST"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Validate extension
+        run: |
+          for f in *.js; do node --check "$f"; done
+          for k in name version manifest_version content_scripts; do
+            jq -e ".$k" manifest.json > /dev/null || { echo "::error::manifest.json is missing $k"; exit 1; }
+          done
+          jq -r '.. | strings | select(test("^icons/"))' manifest.json | sort -u | while read -r f; do
+            [ -f "$f" ] || { echo "::error::Missing file referenced by manifest: $f"; exit 1; }
+          done
+
+      - name: Build zip
+        run: |
+          mkdir -p dist
+          zip -X -q "dist/banish-v$VERSION.zip" \
+            manifest.json background.js content.js content.css popup.html popup.js LICENSE \
+            icons/icon16.png icons/icon32.png icons/icon48.png icons/icon128.png
+          (cd dist && sha256sum *.zip > SHA256SUMS.txt)
+          unzip -l "dist/banish-v$VERSION.zip"
+
+      - name: Write release notes
+        run: |
+          awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 { p = 1; next } /^## \[/ { p = 0 } p' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error file=CHANGELOG.md::No section for [$VERSION] in CHANGELOG.md"
+            exit 1
+          fi
+          PREV=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          SHA=$(cut -d' ' -f1 dist/SHA256SUMS.txt)
+          cat >> notes.md <<EOF
+
+          ### Install
+          1. Download **banish-v$VERSION.zip** below and unzip it.
+          2. Open \`chrome://extensions\` (or \`edge://extensions\`) and turn on **Developer mode**.
+          3. Click **Load unpacked** and pick the unzipped folder.
+          4. Reload any open TikTok tab.
+
+          **Updating?** Replace the old folder's files with the new ones, then press ↻ on the extension card.
+
+          <sub>SHA-256 \`$SHA\`</sub>
+          EOF
+          if [ -n "$PREV" ]; then
+            echo "" >> notes.md
+            echo "**Full changelog:** https://github.com/$GITHUB_REPOSITORY/compare/$PREV...$GITHUB_REF_NAME" >> notes.md
+          fi
+          cat notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FLAGS=""
+          case "$VERSION" in *-*) FLAGS="--prerelease" ;; *) FLAGS="--latest" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Banish v$VERSION" \
+            --notes-file notes.md \
+            --verify-tag $FLAGS
