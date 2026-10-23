@@ -26,21 +26,33 @@
     });
   }
 
+  // Synthetic events that look like a real mouse: TikTok's menus ignore pointer events
+  // without pointerType "mouse" and a position on the element.
+  function mouseOpts(el, extra) {
+    const r = el.getBoundingClientRect();
+    return {
+      bubbles: true, cancelable: true, composed: true, view: window,
+      pointerType: 'mouse', pointerId: 1, isPrimary: true, button: 0,
+      clientX: Math.round(r.left + r.width / 2), clientY: Math.round(r.top + r.height / 2),
+      ...extra,
+    };
+  }
+  function fire(el, type, extra) {
+    const opts = mouseOpts(el, extra);
+    el.dispatchEvent(type.startsWith('pointer') ? new PointerEvent(type, opts) : new MouseEvent(type, opts));
+  }
+
   function hover(el) {
-    const opts = { bubbles: true, cancelable: true, view: window };
-    for (const t of ['pointerover', 'pointerenter', 'mouseover', 'mouseenter', 'mousemove']) {
-      el.dispatchEvent(t.startsWith('pointer') ? new PointerEvent(t, opts) : new MouseEvent(t, opts));
-    }
+    for (const t of ['pointerover', 'pointerenter', 'mouseover', 'mouseenter', 'pointermove', 'mousemove']) fire(el, t);
   }
 
   function realClick(el) {
     hover(el);
-    const opts = { bubbles: true, cancelable: true, view: window, button: 0 };
-    el.dispatchEvent(new PointerEvent('pointerdown', opts));
-    el.dispatchEvent(new MouseEvent('mousedown', opts));
-    el.dispatchEvent(new PointerEvent('pointerup', opts));
-    el.dispatchEvent(new MouseEvent('mouseup', opts));
-    el.click();
+    fire(el, 'pointerdown', { buttons: 1 });
+    fire(el, 'mousedown', { buttons: 1 });
+    fire(el, 'pointerup');
+    fire(el, 'mouseup');
+    fire(el, 'click');
   }
 
   const exactText = (el, re) => re.test((el.textContent || '').trim());
@@ -80,6 +92,8 @@
   }
 
   function findBlockConfirm() {
+    const exact = document.querySelector('[data-e2e="block-popup-block-btn"]');
+    if (isVisible(exact)) return exact;
     const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [class*="Modal"], [class*="modal"]')]
       .filter((d) => isVisible(d) && !d.querySelector('[data-e2e="user-report"]'));
     for (const d of dialogs) {
@@ -113,9 +127,11 @@
 
       step = 'Block option not found in the ⋯ menu';
       let item = null;
-      for (let i = 0; i < 5 && !item; i++) {
-        hover(more);
-        if (i > 0) realClick(more);
+      // The ⋯ menu opens on click (hover alone doesn't open it in a background frame).
+      for (let i = 0; i < 4 && !item; i++) {
+        item = findBlockMenuItem();
+        if (item) break;
+        realClick(more);
         item = await waitFor(findBlockMenuItem, 1500).catch(() => null);
       }
       if (!item) throw new Error(step);
@@ -343,40 +359,12 @@
     });
   }
 
-  // Reads the account's numeric id and secUid from its profile page data.
-  async function fetchUserIds(username) {
-    const res = await fetch(`/@${encodeURIComponent(username)}`, { credentials: 'include' });
-    const html = await res.text();
-    const m = /<script[^>]+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/.exec(html);
-    if (!m) throw new Error('profile data not found');
-    const user = JSON.parse(m[1]).__DEFAULT_SCOPE__['webapp.user-detail'].userInfo.user;
-    if (!user || !user.id || !user.secUid) throw new Error('account ids missing');
-    return { userId: String(user.id), secUid: user.secUid };
-  }
-
-  // Sends TikTok's own block request through the page-context bridge (main.js).
-  async function blockViaApi(username) {
-    let ids;
-    try { ids = await fetchUserIds(username); } catch (e) { return { ok: false, error: `Couldn’t read the account (${e.message})` }; }
-    return new Promise((resolve) => {
-      const id = Math.random().toString(36).slice(2);
-      const onMsg = (e) => {
-        if (e.source !== window || !e.data || e.data.banish !== 'block-res' || e.data.id !== id) return;
-        window.removeEventListener('message', onMsg);
-        clearTimeout(timer);
-        const d = e.data;
-        resolve(d.ok ? { ok: true } : { ok: false, error: `TikTok refused (${d.status || '-'} / ${d.code ?? '-'} ${d.msg || ''})`.trim() });
-      };
-      window.addEventListener('message', onMsg);
-      const timer = setTimeout(() => { window.removeEventListener('message', onMsg); resolve({ ok: false, error: 'Block request got no reply' }); }, 16000);
-      window.postMessage({ banish: 'block-req', id, ...ids }, location.origin);
-    });
-  }
-
+  // Opens the account's profile in a hidden frame and presses TikTok's own ⋯ → Block → Block.
+  // If the frame can't finish, the same steps run in a background tab.
   async function blockUser(username) {
     const errors = [];
-    for (const [name, method] of [['api', blockViaApi], ['frame', blockViaFrame], ['tab', blockViaTab]]) {
-      if (name !== 'api') toast(`Still working on <b>@${esc(username)}</b>… trying another way`, 'busy');
+    for (const [name, method] of [['frame', blockViaFrame], ['tab', blockViaTab]]) {
+      if (name !== 'frame') toast(`Still working on <b>@${esc(username)}</b>… trying another way`, 'busy');
       const res = await method(username);
       console.info(`[Banish] block via ${name}:`, res);
       if (res.ok) return { ...res, via: name };
