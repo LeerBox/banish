@@ -14,6 +14,12 @@
       "css": ["content.css"],
       "run_at": "document_idle",
       "all_frames": true
+    },
+    {
+      "matches": ["https://www.tiktok.com/*"],
+      "js": ["main.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
     }
   ],
   "action": {

@@ -264,17 +264,19 @@
 
   // ---------- toast ----------
   let toastEl = null, toastTimer = null;
+  // kind: 'ok' | 'err' | 'busy' (busy toasts stay until replaced)
   function toast(html, kind = 'ok') {
     if (!toastEl) {
       toastEl = document.createElement('div');
       toastEl.className = 'tqb-toast';
       document.documentElement.appendChild(toastEl);
     }
-    toastEl.innerHTML = `<span class="tqb-toast-ico">${kind === 'err' ? ICON : ICON_OK}</span><span>${html}</span>`;
+    const ico = kind === 'busy' ? '<span class="tqb-toast-spin"></span>' : kind === 'err' ? ICON : ICON_OK;
+    toastEl.innerHTML = `<span class="tqb-toast-ico">${ico}</span><span>${html}</span>`;
     toastEl.dataset.kind = kind;
     toastEl.classList.add('tqb-show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('tqb-show'), 3200);
+    if (kind !== 'busy') toastTimer = setTimeout(() => toastEl.classList.remove('tqb-show'), kind === 'err' ? 6000 : 3200);
   }
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -324,7 +326,7 @@
       const timer = setTimeout(() => finish({
         ok: false,
         error: alive ? 'Timed out while blocking' : 'Hidden profile frame never started',
-      }), 35000);
+      }), 25000);
       document.documentElement.appendChild(frame);
     });
   }
@@ -341,13 +343,47 @@
     });
   }
 
+  // Reads the account's numeric id and secUid from its profile page data.
+  async function fetchUserIds(username) {
+    const res = await fetch(`/@${encodeURIComponent(username)}`, { credentials: 'include' });
+    const html = await res.text();
+    const m = /<script[^>]+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/.exec(html);
+    if (!m) throw new Error('profile data not found');
+    const user = JSON.parse(m[1]).__DEFAULT_SCOPE__['webapp.user-detail'].userInfo.user;
+    if (!user || !user.id || !user.secUid) throw new Error('account ids missing');
+    return { userId: String(user.id), secUid: user.secUid };
+  }
+
+  // Sends TikTok's own block request through the page-context bridge (main.js).
+  async function blockViaApi(username) {
+    let ids;
+    try { ids = await fetchUserIds(username); } catch (e) { return { ok: false, error: `Couldn’t read the account (${e.message})` }; }
+    return new Promise((resolve) => {
+      const id = Math.random().toString(36).slice(2);
+      const onMsg = (e) => {
+        if (e.source !== window || !e.data || e.data.banish !== 'block-res' || e.data.id !== id) return;
+        window.removeEventListener('message', onMsg);
+        clearTimeout(timer);
+        const d = e.data;
+        resolve(d.ok ? { ok: true } : { ok: false, error: `TikTok refused (${d.status || '-'} / ${d.code ?? '-'} ${d.msg || ''})`.trim() });
+      };
+      window.addEventListener('message', onMsg);
+      const timer = setTimeout(() => { window.removeEventListener('message', onMsg); resolve({ ok: false, error: 'Block request got no reply' }); }, 16000);
+      window.postMessage({ banish: 'block-req', id, ...ids }, location.origin);
+    });
+  }
+
   async function blockUser(username) {
-    const viaFrame = await blockViaFrame(username);
-    if (viaFrame.ok) return viaFrame;
-    const viaTab = await blockViaTab(username); // fallback: background tab
-    if (viaTab.ok) return viaTab;
-    console.warn('[Banish] block failed', { frame: viaFrame.error, tab: viaTab.error });
-    return { ok: false, error: viaTab.error === viaFrame.error ? viaTab.error : `${viaFrame.error} (tab: ${viaTab.error})` };
+    const errors = [];
+    for (const [name, method] of [['api', blockViaApi], ['frame', blockViaFrame], ['tab', blockViaTab]]) {
+      if (name !== 'api') toast(`Still working on <b>@${esc(username)}</b>… trying another way`, 'busy');
+      const res = await method(username);
+      console.info(`[Banish] block via ${name}:`, res);
+      if (res.ok) return { ...res, via: name };
+      errors.push(`${name}: ${res.error}`);
+    }
+    console.warn('[Banish] block failed', errors);
+    return { ok: false, error: errors.join(' · ') };
   }
 
   async function quickBlock(username, item, source) {
@@ -358,10 +394,14 @@
     busy.add(username);
     refreshAllStates();
 
+    // Step 1 — Not interested (videos only).
     let notInterested = false;
     if (item && settings.notInterested) {
+      toast(`Marking <b>Not interested</b>…`, 'busy');
       notInterested = await markNotInterested(item).catch(() => false);
     }
+    // Step 2 — block the account that posted it (username was captured before step 1 changed the feed).
+    toast(`${notInterested ? 'Not interested ✓ · ' : ''}Blocking <b>@${esc(username)}</b>…`, 'busy');
     const res = await blockUser(username);
     busy.delete(username);
 

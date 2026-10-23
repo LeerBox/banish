@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p dist
           zip -X -q "dist/banish-v$VERSION.zip" \
-            manifest.json background.js content.js content.css popup.html popup.js LICENSE \
+            manifest.json background.js content.js main.js content.css popup.html popup.js LICENSE \
             icons/icon16.png icons/icon32.png icons/icon48.png icons/icon128.png
           (cd dist && sha256sum *.zip > SHA256SUMS.txt)
           unzip -l "dist/banish-v$VERSION.zip"
