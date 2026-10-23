@@ -136,11 +136,36 @@
     return (selfUser = u);
   }
 
-  const ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
-    <path d="M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-  const ICON_OK = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // The Banish mark: a ban sign with TikTok-style cyan/red split layers that separate on hover.
+  const BAN = '<circle cx="12" cy="12" r="7.6"/><path d="M6.6 6.6l10.8 10.8"/>';
+  const CHECK = '<path d="M6 12.4l4 4L18.2 8"/>';
+  const glyph = (shape) => `<svg class="tqb-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <g class="tqb-l tqb-l-c">${shape}</g><g class="tqb-l tqb-l-r">${shape}</g><g class="tqb-l tqb-l-w">${shape}</g></svg>`;
+  const ICON = glyph(BAN);
+  const ICON_OK = glyph(CHECK);
+
+  // ---------- branded tooltip ----------
+  let tipEl = null;
+  function showTip(btn) {
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'tqb-tip';
+      tipEl.setAttribute('role', 'tooltip');
+      document.documentElement.appendChild(tipEl);
+    }
+    const u = btn.dataset.tqbUser;
+    tipEl.innerHTML = `<div class="tqb-tip-title"><span class="tqb-tip-brand">Banish</span> @${esc(u)}</div>
+      <div class="tqb-tip-sub">${esc(btn.dataset.tip || '')}</div>`;
+    tipEl.classList.add('tqb-show');
+    const r = btn.getBoundingClientRect();
+    const t = tipEl.getBoundingClientRect();
+    const below = r.top < t.height + 16;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - t.width / 2), innerWidth - t.width - 8);
+    tipEl.style.left = `${Math.round(left)}px`;
+    tipEl.style.top = `${Math.round(below ? r.bottom + 8 : r.top - t.height - 8)}px`;
+    tipEl.dataset.side = below ? 'below' : 'above';
+  }
+  const hideTip = () => tipEl && tipEl.classList.remove('tqb-show');
 
   function makeButton(variant, username, getItem) {
     const btn = document.createElement('button');
@@ -148,6 +173,10 @@
     btn.className = `tqb-btn tqb-${variant}`;
     btn.dataset.tqbUser = username;
     btn.innerHTML = `<span class="tqb-ico">${ICON}</span><span class="tqb-label"></span>`;
+    btn.addEventListener('mouseenter', () => showTip(btn));
+    btn.addEventListener('focus', () => showTip(btn));
+    btn.addEventListener('mouseleave', hideTip);
+    btn.addEventListener('blur', hideTip);
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -164,22 +193,35 @@
 
   function labelFor(btn) {
     const u = btn.dataset.tqbUser;
-    if (btn.classList.contains('tqb-busy')) return 'Blocking…';
-    if (blocked[u]) return 'Blocked';
-    if (btn.classList.contains('tqb-video')) return settings.notInterested ? 'Not interested + Block' : 'Block account';
-    return 'Block';
+    if (busy.has(u)) return 'Banishing…';
+    if (blocked[u]) return 'Banished';
+    return 'Banish';
+  }
+
+  function tipFor(btn) {
+    const u = btn.dataset.tqbUser;
+    if (busy.has(u)) return 'Working on it…';
+    if (blocked[u]) return 'Already blocked';
+    if (btn.classList.contains('tqb-video') && settings.notInterested) return 'Not interested + Block · Alt+B';
+    return 'Block this account';
   }
 
   function applyState(btn) {
     const u = btn.dataset.tqbUser;
     const isBlocked = !!blocked[u];
+    const isBusy = busy.has(u);
+    const wasBlocked = btn.classList.contains('tqb-done');
     btn.classList.toggle('tqb-done', isBlocked);
-    btn.classList.toggle('tqb-busy', busy.has(u));
-    btn.querySelector('.tqb-ico').innerHTML = isBlocked ? ICON_OK : ICON;
+    btn.classList.toggle('tqb-busy', isBusy);
+    if (wasBlocked !== isBlocked || !btn.querySelector('.tqb-glyph')) {
+      btn.querySelector('.tqb-ico').innerHTML = isBlocked ? ICON_OK : ICON;
+    }
     btn.querySelector('.tqb-label').textContent = labelFor(btn);
-    btn.title = isBlocked ? `@${u} is blocked` : `Quick block @${u}`;
-    btn.setAttribute('aria-label', btn.title);
-    btn.disabled = isBlocked || busy.has(u);
+    btn.dataset.tip = tipFor(btn);
+    btn.setAttribute('aria-label', `Banish @${u}: ${btn.dataset.tip}`);
+    // aria-disabled instead of disabled so the tooltip still works on finished buttons.
+    btn.setAttribute('aria-disabled', String(isBlocked || isBusy));
+    if (tipEl && tipEl.classList.contains('tqb-show') && btn.matches(':hover')) showTip(btn);
   }
 
   function refreshAllStates() {
@@ -197,7 +239,7 @@
       toastEl.className = 'tqb-toast';
       document.documentElement.appendChild(toastEl);
     }
-    toastEl.innerHTML = html;
+    toastEl.innerHTML = `<span class="tqb-toast-ico">${kind === 'err' ? ICON : ICON_OK}</span><span>${html}</span>`;
     toastEl.dataset.kind = kind;
     toastEl.classList.add('tqb-show');
     clearTimeout(toastTimer);
@@ -284,7 +326,7 @@
     if (res.ok) {
       blocked[username] = { ts: Date.now(), source, notInterested };
       chrome.storage.local.set({ blocked });
-      toast(`<b>@${esc(username)}</b> blocked${notInterested ? ' · marked <b>Not interested</b>' : ''}`);
+      toast(`Banished <b>@${esc(username)}</b>${notInterested ? ' · less content like this' : ''}`);
       if (item && isMostlyVisible(item)) goNext();
     } else {
       toast(`Couldn’t block <b>@${esc(username)}</b> — ${esc(res.error || 'unknown error')}`, 'err');
@@ -431,7 +473,7 @@
     scheduleScan();
   }).observe(document.documentElement, { childList: true, subtree: true });
   addEventListener('resize', scheduleScan);
-  addEventListener('scroll', scheduleScan, { passive: true, capture: true });
+  addEventListener('scroll', () => { hideTip(); scheduleScan(); }, { passive: true, capture: true });
 
   // Alt+B → quick-block the author of the video currently on screen.
   addEventListener('keydown', (e) => {

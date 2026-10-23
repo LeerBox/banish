@@ -1,38 +1,71 @@
-/* Banish — injected UI */
+/* Banish — injected UI.
+   One visual language everywhere: the Banish mark (ban sign with cyan/red split layers),
+   calm and monochrome at rest, "splitting" into brand colors on hover. */
 .tqb-host { position: relative !important; }
 
+.tqb-btn, .tqb-tip, .tqb-toast {
+  --bn-cyan: #25f4ee;
+  --bn-red: #fe2c55;
+  --bn-ink: rgba(18, 18, 24, .58);
+  --bn-ink-strong: rgba(18, 18, 24, .86);
+  --bn-line: rgba(255, 255, 255, .14);
+  --bn-ease: cubic-bezier(.2, .8, .2, 1);
+  --bn-font: "TikTokFont", "Proxima Nova", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---------- base button ---------- */
 .tqb-btn {
-  --tqb-red: #fe2c55;
   all: unset;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   cursor: pointer;
-  font: 600 13px/1 "TikTokFont", "Proxima Nova", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 600 13px/1 var(--bn-font);
+  letter-spacing: .01em;
   color: #fff;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color .18s ease, color .18s ease, opacity .18s ease, max-width .25s ease, transform .12s ease;
+  transition: background-color .2s var(--bn-ease), color .2s var(--bn-ease), opacity .2s var(--bn-ease),
+              max-width .28s var(--bn-ease), border-color .2s var(--bn-ease), transform .12s var(--bn-ease);
 }
 .tqb-btn:active { transform: scale(.94); }
-.tqb-btn:focus-visible { outline: 2px solid var(--tqb-red); outline-offset: 2px; }
-.tqb-btn[disabled] { cursor: default; }
-.tqb-ico { display: inline-flex; width: 20px; height: 20px; flex: none; }
-.tqb-ico svg { width: 100%; height: 100%; }
-.tqb-label { white-space: nowrap; overflow: hidden; }
+.tqb-btn:focus-visible { outline: 2px solid var(--bn-cyan); outline-offset: 2px; }
+.tqb-btn[aria-disabled="true"] { cursor: default; }
+.tqb-btn[aria-disabled="true"]:active { transform: none; }
+.tqb-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Busy spinner */
-.tqb-btn.tqb-busy .tqb-ico svg { display: none; }
+/* ---------- the Banish glyph ---------- */
+.tqb-ico { position: relative; display: inline-flex; width: 20px; height: 20px; flex: none; }
+.tqb-glyph { width: 100%; height: 100%; overflow: visible; }
+.tqb-l { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+         transition: transform .22s var(--bn-ease), opacity .22s var(--bn-ease); }
+.tqb-l-c { stroke: var(--bn-cyan); opacity: 0; }
+.tqb-l-r { stroke: var(--bn-red); opacity: 0; }
+.tqb-l-w { stroke: currentColor; }
+
+/* the split: on hover/focus the colour layers slide apart like the logo */
+.tqb-btn:not([aria-disabled="true"]):is(:hover, :focus-visible) .tqb-l-c { opacity: 1; transform: translate(-1.2px, -1.2px); }
+.tqb-btn:not([aria-disabled="true"]):is(:hover, :focus-visible) .tqb-l-r { opacity: 1; transform: translate(1.2px, 1.2px); }
+
+/* busy: gradient ring in brand colours */
+.tqb-btn.tqb-busy .tqb-glyph { opacity: 0; }
 .tqb-btn.tqb-busy .tqb-ico::before {
-  content: ""; width: 100%; height: 100%; box-sizing: border-box;
-  border: 2.4px solid currentColor; border-right-color: transparent; border-radius: 50%;
-  animation: tqb-spin .7s linear infinite;
+  content: ""; position: absolute; inset: 1px; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 15%, var(--bn-cyan) 45%, var(--bn-red) 85%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  animation: tqb-spin .8s linear infinite;
 }
 @keyframes tqb-spin { to { transform: rotate(360deg); } }
 
-/* ---- On-video button: sits on the top edge, left of TikTok's "more" button ---- */
+/* done: check mark in brand cyan */
+.tqb-btn.tqb-done .tqb-l-w { stroke: var(--bn-cyan); }
+.tqb-btn.tqb-done .tqb-ico { animation: tqb-pop .35s var(--bn-ease); }
+@keyframes tqb-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+/* ---------- on video: glass pill, top edge, left of TikTok's "more" button ---------- */
 .tqb-video {
   position: absolute;
   z-index: 3;
@@ -42,56 +75,93 @@
   padding: 0 10px;
   justify-content: flex-start;
   border-radius: 999px;
-  background: rgba(22, 24, 35, .45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--bn-line);
+  background: var(--bn-ink);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
   overflow: hidden;
-  opacity: .85;
 }
-.tqb-video .tqb-label { opacity: 0; transition: opacity .15s ease; }
-.tqb-video:hover, .tqb-video:focus-visible, .tqb-video.tqb-busy {
-  max-width: 260px;
-  background: var(--tqb-red);
-  opacity: 1;
+.tqb-video .tqb-label { opacity: 0; transition: opacity .18s var(--bn-ease); }
+.tqb-video:is(:hover, :focus-visible), .tqb-video.tqb-busy {
+  max-width: 160px;
+  padding-right: 14px;
+  background: var(--bn-ink-strong);
+  border-color: rgba(255, 255, 255, .22);
 }
-.tqb-video:hover .tqb-label, .tqb-video:focus-visible .tqb-label, .tqb-video.tqb-busy .tqb-label { opacity: 1; }
-.tqb-video.tqb-done { background: rgba(22, 24, 35, .6); opacity: 1; }
-.tqb-video.tqb-done .tqb-ico { color: #25f4ee; }
+.tqb-video:is(:hover, :focus-visible) .tqb-label, .tqb-video.tqb-busy .tqb-label { opacity: 1; }
+.tqb-video.tqb-done { border-color: rgba(37, 244, 238, .35); }
 
-/* ---- Comments & replies: small inline icon next to the username ---- */
+/* ---------- comments, replies & search: quiet inline glyph ---------- */
 .tqb-comment, .tqb-search {
-  width: 22px; height: 22px;
-  margin-inline-start: 6px;
+  width: 24px; height: 24px;
+  margin-inline-start: 4px;
   border-radius: 50%;
-  color: var(--ui-text-3, rgba(255, 255, 255, .5));
+  color: var(--ui-text-3, rgba(255, 255, 255, .45));
   vertical-align: middle;
   flex: none;
 }
-.tqb-comment .tqb-ico, .tqb-search .tqb-ico { width: 15px; height: 15px; }
+.tqb-comment .tqb-ico, .tqb-search .tqb-ico { width: 16px; height: 16px; }
+.tqb-comment .tqb-l, .tqb-search .tqb-l { stroke-width: 2.3; }
 .tqb-comment .tqb-label, .tqb-search .tqb-label { display: none; }
+.tqb-comment:not([aria-disabled="true"]):is(:hover, :focus-visible),
+.tqb-search:not([aria-disabled="true"]):is(:hover, :focus-visible) {
+  color: var(--ui-text-1, #fff);
+  background: var(--ui-shape-neutral-4, rgba(255, 255, 255, .08));
+}
 .tqb-comment { opacity: 0; }
 [data-tqb-comment-user]:hover .tqb-comment,
 .tqb-comment:focus-visible, .tqb-comment.tqb-busy, .tqb-comment.tqb-done { opacity: 1; }
-.tqb-comment:hover, .tqb-search:hover { color: #fff; background: var(--tqb-red); }
-.tqb-comment.tqb-done, .tqb-search.tqb-done { color: #25f4ee; background: transparent; }
+.tqb-search { opacity: .7; }
+.tqb-search:hover, .tqb-search.tqb-done, .tqb-search.tqb-busy { opacity: 1; }
 @media (hover: none) { .tqb-comment { opacity: .6; } }
 
 [data-tqb-comment-user].tqb-dim { opacity: .35; filter: grayscale(1); transition: opacity .2s; }
 [data-tqb-comment-user].tqb-dim:hover { opacity: .8; }
 
-/* ---- Profile header: matches TikTok's 44px header buttons ---- */
+/* ---------- profile header: matches TikTok's secondary 44px buttons ---------- */
 .tqb-profile {
   height: 44px;
-  padding: 0 16px;
+  padding: 0 18px 0 14px;
   margin-inline-start: 8px;
   border-radius: 8px;
-  background: var(--tqb-red);
+  background: var(--ui-shape-neutral-4, rgba(255, 255, 255, .08));
+  color: var(--ui-text-1, #fff);
   font-size: 15px;
 }
-.tqb-profile:hover { filter: brightness(1.08); }
-.tqb-profile.tqb-done { background: var(--ui-shape-neutral-4, rgba(255, 255, 255, .12)); color: var(--ui-text-1, #fff); }
+.tqb-profile:not([aria-disabled="true"]):hover { background: var(--ui-shape-neutral-3, rgba(255, 255, 255, .14)); }
 
-/* ---- Hidden worker frame ---- */
+/* ---------- branded tooltip ---------- */
+.tqb-tip {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 260px;
+  padding: 8px 12px 9px;
+  border-radius: 10px;
+  background: #16161c;
+  border: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  color: #fff;
+  font: 500 12px/1.35 var(--bn-font);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .14s var(--bn-ease), transform .14s var(--bn-ease);
+}
+.tqb-tip[data-side="below"] { transform: translateY(-4px); }
+.tqb-tip.tqb-show { opacity: 1; transform: none; transition-delay: .15s; }
+.tqb-tip::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 2px; border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, var(--bn-cyan), var(--bn-red));
+}
+.tqb-tip-title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tqb-tip-brand {
+  background: linear-gradient(90deg, var(--bn-cyan), var(--bn-red));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tqb-tip-sub { margin-top: 2px; color: rgba(255, 255, 255, .6); }
+
+/* ---------- hidden worker frame ---------- */
 .tqb-worker-frame {
   position: fixed !important;
   left: -10000px !important;
@@ -103,28 +173,38 @@
   pointer-events: none !important;
 }
 
-/* ---- Toast ---- */
+/* ---------- toast ---------- */
 .tqb-toast {
   position: fixed;
   left: 50%;
   bottom: 28px;
   z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   transform: translate(-50%, 16px);
   max-width: min(520px, calc(100vw - 32px));
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: rgba(22, 24, 35, .92);
+  padding: 11px 18px 11px 14px;
+  border-radius: 14px;
+  background: rgba(22, 22, 28, .94);
+  border: 1px solid rgba(255, 255, 255, .08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #fff;
-  font: 500 14px/1.35 "TikTokFont", system-ui, -apple-system, "Segoe UI", sans-serif;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
-  border-inline-start: 3px solid #25f4ee;
+  font: 500 14px/1.35 var(--bn-font);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
   opacity: 0;
   pointer-events: none;
-  transition: opacity .2s ease, transform .2s ease;
+  transition: opacity .2s var(--bn-ease), transform .2s var(--bn-ease);
 }
-.tqb-toast[data-kind="err"] { border-inline-start-color: #fe2c55; }
 .tqb-toast.tqb-show { opacity: 1; transform: translate(-50%, 0); }
+.tqb-toast-ico { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.tqb-toast .tqb-l-w { stroke: var(--bn-cyan); }
+.tqb-toast .tqb-l-c { opacity: .9; transform: translate(-1px, -1px); }
+.tqb-toast .tqb-l-r { opacity: .9; transform: translate(1px, 1px); }
+.tqb-toast[data-kind="err"] .tqb-l-w { stroke: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
-  .tqb-btn, .tqb-toast, .tqb-video .tqb-label { transition: none; }
+  .tqb-btn, .tqb-l, .tqb-tip, .tqb-toast, .tqb-video .tqb-label { transition: none; }
+  .tqb-btn.tqb-done .tqb-ico { animation: none; }
 }
