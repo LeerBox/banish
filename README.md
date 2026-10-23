@@ -29,6 +29,8 @@
 | Comments & replies | Small ⊘ next to the username (shows on hover). |
 | Profile page | "Block" button next to the `⋯` button in the header. |
 | Search results | ⊘ next to the author name on each card. |
+| LIVE: host | Round ⊘ button next to TikTok's share button in the stream header. |
+| LIVE: chat | Small ⊘ next to each chatter's name (shows on hover). |
 
 ## Install
 1. Download **banish-vX.Y.Z.zip** from the [latest release](https://github.com/LeerBox/banish/releases/latest) and unzip it.

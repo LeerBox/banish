@@ -526,6 +526,48 @@
     });
   }
 
+  // ---------- LIVE: host header + chat ----------
+  function scanLive() {
+    const header = document.querySelector('[data-e2e="live-header-container"]');
+    if (header) {
+      const link = header.querySelector('a[href*="/@"]');
+      const user = usernameFromHref(link && link.getAttribute('href'));
+      // Sits right after TikTok's share button, in the same row, same 36px circle.
+      const share = header.querySelector('[data-e2e="room-header-share-btn"]');
+      const anchor = share ? share.parentElement : header.querySelector('[data-e2e="room-header-follow-btn"]');
+      let btn = header.querySelector('.tqb-live-host');
+      if (!user || user === getSelf() || !anchor) {
+        if (btn) btn.remove();
+      } else if (!btn) {
+        btn = makeButton('live-host', user, null);
+        anchor.after(btn);
+      } else if (btn.dataset.tqbUser !== user) {
+        btn.dataset.tqbUser = user;
+        applyState(btn);
+      }
+    }
+
+    if (!settings.showInComments) return;
+    const self = getSelf();
+    // main.js tags each chat name with its @username (data-tqb-user).
+    document.querySelectorAll('[data-e2e="message-owner-name"][data-tqb-user]').forEach((nameEl) => {
+      const user = nameEl.getAttribute('data-tqb-user');
+      let btn = nameEl.nextElementSibling;
+      const hasBtn = btn && btn.classList.contains('tqb-chat');
+      if (!user || user === self) { if (hasBtn) btn.remove(); return; }
+      const row = nameEl.closest('[data-e2e="chat-message"], [data-e2e="enter-message"]') || nameEl.parentElement;
+      row.dataset.tqbCommentUser = user;
+      row.classList.toggle('tqb-dim', settings.dimBlocked && !!blocked[user]);
+      if (!hasBtn) {
+        btn = makeButton('chat', user, null);
+        nameEl.after(btn);
+      } else if (btn.dataset.tqbUser !== user) {
+        btn.dataset.tqbUser = user; // chat rows are recycled
+        applyState(btn);
+      }
+    });
+  }
+
   // ---------- scheduler ----------
   let scanQueued = false;
   function scheduleScan() {
@@ -533,15 +575,15 @@
     scanQueued = true;
     setTimeout(() => {
       scanQueued = false;
-      try { scanFeed(); scanComments(); scanProfile(); scanSearch(); } catch (e) { console.debug('[Banish]', e); }
+      try { scanFeed(); scanComments(); scanProfile(); scanSearch(); scanLive(); } catch (e) { console.debug('[Banish]', e); }
     }, 200);
   }
 
   new MutationObserver((muts) => {
     // Ignore mutations caused purely by our own elements.
-    if (muts.every((m) => [...m.addedNodes, ...m.removedNodes].every((n) => n.classList && (n.classList.contains('tqb-btn') || n.classList.contains('tqb-worker-frame') || n.classList.contains('tqb-toast'))))) return;
+    if (muts.every((m) => m.type === 'childList' && [...m.addedNodes, ...m.removedNodes].every((n) => n.classList && (n.classList.contains('tqb-btn') || n.classList.contains('tqb-worker-frame') || n.classList.contains('tqb-toast'))))) return;
     scheduleScan();
-  }).observe(document.documentElement, { childList: true, subtree: true });
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-tqb-user'] });
   addEventListener('resize', scheduleScan);
   addEventListener('scroll', () => { hideTip(); scheduleScan(); }, { passive: true, capture: true });
 
@@ -556,7 +598,7 @@
       e.preventDefault();
       quickBlock(user, item, 'shortcut');
     } else {
-      const p = document.querySelector('.tqb-profile');
+      const p = document.querySelector('.tqb-profile, .tqb-live-host');
       if (p) { e.preventDefault(); p.click(); }
     }
   }, true);

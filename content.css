@@ -120,6 +120,35 @@
 [data-tqb-comment-user].tqb-dim { opacity: .35; filter: grayscale(1); transition: opacity .2s; }
 [data-tqb-comment-user].tqb-dim:hover { opacity: .8; }
 
+/* ---------- LIVE: host header (matches TikTok's 36px share circle) ---------- */
+.tqb-live-host {
+  width: 36px; height: 36px;
+  margin-inline-start: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .25);
+  color: #c1c1c1;
+  flex: none;
+}
+.tqb-live-host .tqb-ico { width: 18px; height: 18px; }
+.tqb-live-host .tqb-label { display: none; }
+.tqb-live-host:not([aria-disabled="true"]):hover { background: rgba(255, 255, 255, .16); color: #fff; }
+
+/* ---------- LIVE chat: same quiet glyph as comments ---------- */
+.tqb-chat {
+  width: 20px; height: 20px;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+  color: var(--ui-text-3, rgba(255, 255, 255, .45));
+  flex: none;
+  opacity: 0;
+}
+.tqb-chat .tqb-ico { width: 14px; height: 14px; }
+.tqb-chat .tqb-l { stroke-width: 2.3; }
+.tqb-chat .tqb-label { display: none; }
+[data-tqb-comment-user]:hover .tqb-chat, .tqb-chat:focus-visible, .tqb-chat.tqb-busy, .tqb-chat.tqb-done { opacity: 1; }
+.tqb-chat:not([aria-disabled="true"]):is(:hover, :focus-visible) { color: #fff; background: rgba(255, 255, 255, .1); }
+@media (hover: none) { .tqb-chat { opacity: .6; } }
+
 /* ---------- profile header: matches TikTok's secondary 44px buttons ---------- */
 .tqb-profile {
   height: 44px;
