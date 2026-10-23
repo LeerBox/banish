@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Banish</title>
+  <style>
+    :root { color-scheme: dark; --bg:#121212; --card:#1e1e1e; --text:#f1f1f2; --muted:#9a9a9e; --red:#fe2c55; --cyan:#25f4ee; }
+    * { box-sizing: border-box; }
+    body { margin: 0; width: 320px; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #2a2a2a; }
+    header img { width: 28px; height: 28px; }
+    header h1 { font-size: 15px; margin: 0; }
+    header p { margin: 0; color: var(--muted); font-size: 12px; }
+    section { padding: 10px 16px; }
+    h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 6px 0 8px; }
+    label.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; cursor: pointer; }
+    label.row small { display: block; color: var(--muted); font-size: 11.5px; }
+    input[type=checkbox] { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: #3a3a3a; position: relative; flex: none; cursor: pointer; transition: background .15s; }
+    input[type=checkbox]::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+    input[type=checkbox]:checked { background: var(--red); }
+    input[type=checkbox]:checked::after { transform: translateX(14px); }
+    .count { color: var(--cyan); font-weight: 700; }
+    ul { list-style: none; margin: 0; padding: 0; max-height: 200px; overflow: auto; }
+    li { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #262626; }
+    li a { color: var(--text); text-decoration: none; }
+    li a:hover { color: var(--red); }
+    li time { color: var(--muted); font-size: 11px; }
+    .empty { color: var(--muted); padding: 6px 0; }
+    footer { padding: 10px 16px 14px; color: var(--muted); font-size: 11.5px; border-top: 1px solid #2a2a2a; }
+    kbd { background: #2a2a2a; border-radius: 4px; padding: 1px 5px; font: 11px ui-monospace, monospace; }
+    button.link { all: unset; color: var(--muted); cursor: pointer; font-size: 11.5px; }
+    button.link:hover { color: var(--red); }
+    .credit { margin-top: 8px; text-align: center; font-size: 11px; color: var(--muted); }
+    .credit b { color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/icon48.png" alt="">
+    <div><h1>Banish</h1><p><span class="count" id="count">0</span> accounts blocked</p></div>
+  </header>
+  <section>
+    <h2>Behavior</h2>
+    <label class="row"><span>Mark “Not interested” first<small>Tells TikTok to show less of this content</small></span><input type="checkbox" id="notInterested"></label>
+    <label class="row"><span>Auto-skip blocked accounts<small>Jump past their videos in the feed</small></span><input type="checkbox" id="autoSkip"></label>
+    <label class="row"><span>Show in comments<small>Small icon next to each commenter</small></span><input type="checkbox" id="showInComments"></label>
+    <label class="row"><span>Dim blocked commenters</span><input type="checkbox" id="dimBlocked"></label>
+    <label class="row"><span>Ask before blocking</span><input type="checkbox" id="confirmFirst"></label>
+  </section>
+  <section>
+    <h2 style="display:flex;justify-content:space-between">Recently blocked <button class="link" id="clear">Clear list</button></h2>
+    <ul id="list"></ul>
+  </section>
+  <footer>Shortcut: <kbd>Alt</kbd> + <kbd>B</kbd> blocks the video on screen. To unblock, open the profile and use TikTok’s Unblock button.
+    <div class="credit">Idea &amp; design by <b>LeerBox</b></div></footer>
+  <script src="popup.js"></script>
+</body>
+</html>

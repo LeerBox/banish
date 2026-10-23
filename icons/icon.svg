@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Banish</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26262d"/>
+      <stop offset="1" stop-color="#0b0b0f"/>
+    </linearGradient>
+    <g id="ban" fill="none" stroke-width="12" stroke-linecap="round">
+      <circle cx="64" cy="64" r="32"/>
+      <path d="M41.4 41.4L86.6 86.6"/>
+    </g>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <use href="#ban" stroke="#25f4ee" transform="translate(-3 -3)"/>
+  <use href="#ban" stroke="#fe2c55" transform="translate(3 3)"/>
+  <use href="#ban" stroke="#ffffff"/>
+</svg>

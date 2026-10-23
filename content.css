@@ -1,0 +1,130 @@
+/* Banish — injected UI */
+.tqb-host { position: relative !important; }
+
+.tqb-btn {
+  --tqb-red: #fe2c55;
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font: 600 13px/1 "TikTokFont", "Proxima Nova", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .18s ease, color .18s ease, opacity .18s ease, max-width .25s ease, transform .12s ease;
+}
+.tqb-btn:active { transform: scale(.94); }
+.tqb-btn:focus-visible { outline: 2px solid var(--tqb-red); outline-offset: 2px; }
+.tqb-btn[disabled] { cursor: default; }
+.tqb-ico { display: inline-flex; width: 20px; height: 20px; flex: none; }
+.tqb-ico svg { width: 100%; height: 100%; }
+.tqb-label { white-space: nowrap; overflow: hidden; }
+
+/* Busy spinner */
+.tqb-btn.tqb-busy .tqb-ico svg { display: none; }
+.tqb-btn.tqb-busy .tqb-ico::before {
+  content: ""; width: 100%; height: 100%; box-sizing: border-box;
+  border: 2.4px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: tqb-spin .7s linear infinite;
+}
+@keyframes tqb-spin { to { transform: rotate(360deg); } }
+
+/* ---- On-video button: sits on the top edge, left of TikTok's "more" button ---- */
+.tqb-video {
+  position: absolute;
+  z-index: 3;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding: 0 10px;
+  justify-content: flex-start;
+  border-radius: 999px;
+  background: rgba(22, 24, 35, .45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden;
+  opacity: .85;
+}
+.tqb-video .tqb-label { opacity: 0; transition: opacity .15s ease; }
+.tqb-video:hover, .tqb-video:focus-visible, .tqb-video.tqb-busy {
+  max-width: 260px;
+  background: var(--tqb-red);
+  opacity: 1;
+}
+.tqb-video:hover .tqb-label, .tqb-video:focus-visible .tqb-label, .tqb-video.tqb-busy .tqb-label { opacity: 1; }
+.tqb-video.tqb-done { background: rgba(22, 24, 35, .6); opacity: 1; }
+.tqb-video.tqb-done .tqb-ico { color: #25f4ee; }
+
+/* ---- Comments & replies: small inline icon next to the username ---- */
+.tqb-comment, .tqb-search {
+  width: 22px; height: 22px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  color: var(--ui-text-3, rgba(255, 255, 255, .5));
+  vertical-align: middle;
+  flex: none;
+}
+.tqb-comment .tqb-ico, .tqb-search .tqb-ico { width: 15px; height: 15px; }
+.tqb-comment .tqb-label, .tqb-search .tqb-label { display: none; }
+.tqb-comment { opacity: 0; }
+[data-tqb-comment-user]:hover .tqb-comment,
+.tqb-comment:focus-visible, .tqb-comment.tqb-busy, .tqb-comment.tqb-done { opacity: 1; }
+.tqb-comment:hover, .tqb-search:hover { color: #fff; background: var(--tqb-red); }
+.tqb-comment.tqb-done, .tqb-search.tqb-done { color: #25f4ee; background: transparent; }
+@media (hover: none) { .tqb-comment { opacity: .6; } }
+
+[data-tqb-comment-user].tqb-dim { opacity: .35; filter: grayscale(1); transition: opacity .2s; }
+[data-tqb-comment-user].tqb-dim:hover { opacity: .8; }
+
+/* ---- Profile header: matches TikTok's 44px header buttons ---- */
+.tqb-profile {
+  height: 44px;
+  padding: 0 16px;
+  margin-inline-start: 8px;
+  border-radius: 8px;
+  background: var(--tqb-red);
+  font-size: 15px;
+}
+.tqb-profile:hover { filter: brightness(1.08); }
+.tqb-profile.tqb-done { background: var(--ui-shape-neutral-4, rgba(255, 255, 255, .12)); color: var(--ui-text-1, #fff); }
+
+/* ---- Hidden worker frame ---- */
+.tqb-worker-frame {
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
+  width: 1280px !important;
+  height: 800px !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ---- Toast ---- */
+.tqb-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 2147483647;
+  transform: translate(-50%, 16px);
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(22, 24, 35, .92);
+  color: #fff;
+  font: 500 14px/1.35 "TikTokFont", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  border-inline-start: 3px solid #25f4ee;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.tqb-toast[data-kind="err"] { border-inline-start-color: #fe2c55; }
+.tqb-toast.tqb-show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tqb-btn, .tqb-toast, .tqb-video .tqb-label { transition: none; }
+}
