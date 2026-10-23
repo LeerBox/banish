@@ -6,7 +6,9 @@
   'use strict';
 
   const WORKER_PARAM = 'tqb_block';
-  const workerId = new URLSearchParams(location.search).get(WORKER_PARAM);
+  // TikTok's router can strip query params on load, so the hidden frame also carries its job in window.name.
+  const nameJob = /^tqb_block:([a-z0-9]+)$/.exec(window.name || '');
+  const workerId = new URLSearchParams(location.search).get(WORKER_PARAM) || (nameJob && nameJob[1]);
 
   // ---------- shared helpers ----------
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -55,54 +57,83 @@
   }
   if (window !== window.top) return; // never decorate other frames
 
+  // Background-tab fallback: the tab's URL param may have been stripped too, so ask whether this tab is a job.
+  try {
+    chrome.runtime.sendMessage({ type: 'tqb-who-am-i' }, (res) => {
+      void chrome.runtime.lastError;
+      if (res && res.id) runWorker(res.id);
+    });
+  } catch (_) { /* extension reloaded */ }
+
+  const isVisible = (el) => !!(el && el.getClientRects().length);
+
   function isBlockedProfile() {
-    return [...document.querySelectorAll('button, [role="button"]')].some((b) => exactText(b, /^unblock$/i));
+    return [...document.querySelectorAll('button, [role="button"]')]
+      .some((b) => !b.classList.contains('tqb-btn') && exactText(b, /^unblock$/i));
   }
 
   function findBlockMenuItem() {
     const items = document.querySelectorAll(
       '[data-e2e="user-report"] [role="button"], [role="menuitem"], [class*="DivActionContainer"]'
     );
-    return [...items].find((e) => exactText(e, /^block$/i));
+    return [...items].find((e) => isVisible(e) && exactText(e, /^block$/i));
   }
 
   function findBlockConfirm() {
-    const dialogs = [...document.querySelectorAll('[role="dialog"], [class*="Modal"], [class*="modal"]')]
-      .filter((d) => !d.querySelector('[data-e2e="user-report"]'));
+    const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [class*="Modal"], [class*="modal"]')]
+      .filter((d) => isVisible(d) && !d.querySelector('[data-e2e="user-report"]'));
     for (const d of dialogs) {
-      const btn = [...d.querySelectorAll('button, [role="button"]')].find((b) => exactText(b, /^block$/i));
+      const buttons = [...d.querySelectorAll('button, [role="button"]')].filter(isVisible);
+      const btn = buttons.find((b) => exactText(b, /^block$/i))
+        || buttons.find((b) => /TUXButton--primary/.test(b.className) && !exactText(b, /^cancel$/i));
       if (btn) return btn;
     }
     return null;
   }
 
   async function runWorker(id) {
+    const debug = (() => { try { return !!localStorage.getItem('banishDebug'); } catch (_) { return false; } })();
+    const log = (...a) => debug && console.log('[Banish worker]', ...a);
     const report = (result) => {
+      log('result', result);
       const msg = { tqb: id, ...result };
       if (window !== window.top) window.parent.postMessage(msg, location.origin);
       else chrome.runtime.sendMessage({ type: 'tqb-worker-result', ...msg });
     };
+    // Tell the parent we're alive, so it can tell "never started" apart from "got stuck".
+    if (window !== window.top) window.parent.postMessage({ tqb: id, alive: true }, location.origin);
+    let step = 'Profile didn’t load';
     try {
-      const more = await waitFor(() => document.querySelector('[data-e2e="user-more"]'), 20000);
+      const more = await waitFor(() => {
+        const el = document.querySelector('[data-e2e="user-more"]');
+        return isVisible(el) ? el : null;
+      }, 20000);
+      log('profile loaded');
       if (isBlockedProfile()) return report({ ok: true, already: true });
 
+      step = 'Block option not found in the ⋯ menu';
       let item = null;
-      for (let i = 0; i < 4 && !item; i++) {
+      for (let i = 0; i < 5 && !item; i++) {
         hover(more);
         if (i > 0) realClick(more);
-        item = await waitFor(findBlockMenuItem, 2000).catch(() => null);
+        item = await waitFor(findBlockMenuItem, 1500).catch(() => null);
       }
-      if (!item) throw new Error('Block option not found');
+      if (!item) throw new Error(step);
+      log('menu item found');
       realClick(item);
 
-      const confirmBtn = await waitFor(findBlockConfirm, 8000).catch(() => null);
-      if (!confirmBtn) throw new Error('Block confirmation not found');
+      step = 'Block confirmation dialog not found';
+      const confirmBtn = await waitFor(findBlockConfirm, 8000);
+      log('confirm found', confirmBtn.textContent.trim());
       realClick(confirmBtn);
 
-      await waitFor(isBlockedProfile, 8000).catch(() => null);
-      report({ ok: true });
+      step = 'TikTok didn’t confirm the block';
+      await waitFor(() => isBlockedProfile() || (!findBlockConfirm() && !isVisible(confirmBtn) && 'closed'), 8000);
+      // Give TikTok a moment to finish the request, then double-check.
+      await sleep(800);
+      report({ ok: true, verified: isBlockedProfile() });
     } catch (e) {
-      report({ ok: false, error: e.message || String(e) });
+      report({ ok: false, error: step });
     }
   }
 
@@ -272,9 +303,12 @@
       const id = Math.random().toString(36).slice(2);
       const frame = document.createElement('iframe');
       frame.className = 'tqb-worker-frame';
+      try { if (localStorage.getItem('banishDebug')) frame.classList.add('tqb-debug'); } catch (_) { /* ignore */ }
       frame.setAttribute('aria-hidden', 'true');
       frame.tabIndex = -1;
+      frame.name = `tqb_block:${id}`;
       frame.src = `${location.origin}/@${encodeURIComponent(username)}?${WORKER_PARAM}=${id}`;
+      let alive = false;
       const finish = (res) => {
         window.removeEventListener('message', onMsg);
         clearTimeout(timer);
@@ -282,10 +316,15 @@
         resolve(res);
       };
       const onMsg = (e) => {
-        if (e.origin === location.origin && e.data && e.data.tqb === id) finish(e.data);
+        if (e.origin !== location.origin || !e.data || e.data.tqb !== id) return;
+        if (e.data.alive) { alive = true; return; }
+        finish(e.data);
       };
       window.addEventListener('message', onMsg);
-      const timer = setTimeout(() => finish({ ok: false, error: 'timeout' }), 25000);
+      const timer = setTimeout(() => finish({
+        ok: false,
+        error: alive ? 'Timed out while blocking' : 'Hidden profile frame never started',
+      }), 35000);
       document.documentElement.appendChild(frame);
     });
   }
@@ -303,9 +342,12 @@
   }
 
   async function blockUser(username) {
-    let res = await blockViaFrame(username);
-    if (!res.ok) res = await blockViaTab(username); // fallback: background tab
-    return res;
+    const viaFrame = await blockViaFrame(username);
+    if (viaFrame.ok) return viaFrame;
+    const viaTab = await blockViaTab(username); // fallback: background tab
+    if (viaTab.ok) return viaTab;
+    console.warn('[Banish] block failed', { frame: viaFrame.error, tab: viaTab.error });
+    return { ok: false, error: viaTab.error === viaFrame.error ? viaTab.error : `${viaFrame.error} (tab: ${viaTab.error})` };
   }
 
   async function quickBlock(username, item, source) {

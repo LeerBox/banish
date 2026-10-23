@@ -162,16 +162,31 @@
 }
 .tqb-tip-sub { margin-top: 2px; color: rgba(255, 255, 255, .6); }
 
-/* ---------- hidden worker frame ---------- */
+/* ---------- hidden worker frame ----------
+   Kept inside the viewport (but invisible and click-through): Chrome throttles rendering of
+   off-screen frames, which stops TikTok's menus and dialogs from ever appearing. */
 .tqb-worker-frame {
   position: fixed !important;
-  left: -10000px !important;
+  left: 0 !important;
   top: 0 !important;
   width: 1280px !important;
   height: 800px !important;
   border: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  z-index: -1 !important;
+}
+/* localStorage.banishDebug = 1 → show the worker frame in the corner */
+.tqb-worker-frame.tqb-debug {
+  left: auto !important;
+  right: 12px !important;
+  top: auto !important;
+  bottom: 12px !important;
+  opacity: 1 !important;
+  z-index: 2147483646 !important;
+  transform: scale(.35);
+  transform-origin: bottom right;
+  outline: 3px solid #fe2c55 !important;
 }
 
 /* ---------- toast ---------- */
