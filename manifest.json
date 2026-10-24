@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Banish – Quick block for TikTok",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "One-click 'Not interested' + Block for TikTok accounts — on videos, comments, profiles and search. Created by LeerBox.",
   "homepage_url": "https://github.com/LeerBox/banish",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "host_permissions": ["https://www.tiktok.com/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [

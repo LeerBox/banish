@@ -58,6 +58,9 @@ Nothing is sent anywhere else: the list of blocked accounts stays in your browse
 GitHub Actions checks the version, validates the code, builds `banish-vx.y.z.zip` with a SHA-256 checksum,
 and publishes the release with notes taken from the changelog. Tags with a suffix (e.g. `v1.1.0-beta.1`) become pre-releases.
 
+## Privacy
+Banish collects nothing. See the [privacy policy](PRIVACY.md).
+
 ## Author
 Created by **LeerBox**: idea, concept and design.
 

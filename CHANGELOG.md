@@ -3,6 +3,16 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.1.1] - 2026-10-24
+
+Ready for the Chrome Web Store.
+
+### Changed
+- **Fewer permissions.** Banish no longer asks for the `tabs` permission, which it never needed. The install prompt now shows a single line: *Read and change your data on www.tiktok.com*.
+
+### Added
+- **Privacy policy.** [PRIVACY.md](PRIVACY.md): Banish collects nothing, and your settings and block list stay on your device.
+
 ## [1.1.0] - 2026-10-24
 
 Banish now works on **TikTok LIVE**.
