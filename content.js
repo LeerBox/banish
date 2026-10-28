@@ -304,11 +304,11 @@
       const el = document.querySelector('[data-e2e="more-menu-popover_not-interested"]');
       return el && el.getClientRects().length ? el : null;
     };
-    hover(more);
-    let opt = await waitFor(isOpen, 800).catch(() => null);
-    if (!opt) {
+    // The ⋯ menu opens on click (since TikTok's Oct 2026 update hover no longer opens it).
+    let opt = isOpen();
+    for (let i = 0; i < 2 && !opt; i++) {
       realClick(more);
-      opt = await waitFor(isOpen, 2500).catch(() => null);
+      opt = await waitFor(isOpen, 1500).catch(() => null);
     }
     if (!opt) return false;
     realClick(opt);
@@ -497,7 +497,15 @@
     const more = document.querySelector('[data-e2e="user-more"]');
     if (!more) return;
     const user = usernameFromHref(location.pathname);
-    const row = more.parentElement;
+    // TikTok wraps ⋯ in single-child containers; place our button after the outermost one,
+    // in the same row as Follow / Message / Share, so it never sits inside ⋯'s own box.
+    let anchor = more;
+    for (let i = 0; i < 3; i++) {
+      const p = anchor.parentElement;
+      if (!p || [...p.children].filter((c) => !c.classList.contains('tqb-btn')).length !== 1) break;
+      anchor = p;
+    }
+    const row = anchor.parentElement;
     let btn = row.querySelector(':scope > .tqb-profile');
     if (!user || user === getSelf() || !document.querySelector('[data-e2e="follow-button"], [data-e2e="message-button"]')) {
       if (btn) btn.remove();
@@ -505,7 +513,7 @@
     }
     if (!btn) {
       btn = makeButton('profile', user, null);
-      more.after(btn);
+      anchor.after(btn);
     } else if (btn.dataset.tqbUser !== user) {
       btn.dataset.tqbUser = user;
       applyState(btn);

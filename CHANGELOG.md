@@ -3,6 +3,17 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.1.2] - 2026-10-28
+
+Updated for TikTok's late-October redesign.
+
+### Fixed
+- **Profile button overlapped the ⋯ button.** TikTok now wraps ⋯ in its own container, and Banish's button landed inside it. It now sits after ⋯, in the same row as Follow, Message and Share.
+- **Slower "Not interested".** The video ⋯ menu no longer opens on hover, only on click. Banish now clicks straight away, which saves about a second per block.
+
+### Checked, unchanged
+- Feed video button, Block flow on profiles (menu and confirmation dialog), comments, search results, and LIVE (header and chat). Comments now load after you switch the side panel from "You may like" to "Comments"; Banish adds its icons as soon as they appear.
+
 ## [1.1.1] - 2026-10-24
 
 Ready for the Chrome Web Store.
