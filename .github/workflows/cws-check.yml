@@ -1,0 +1,17 @@
+# Manual, read-only check that the Chrome Web Store credentials work. Publishes nothing.
+name: Check Chrome Web Store connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_EXTENSION_ID: bednefmhihipllpadgkekmedanklndhl
+    steps:
+      - uses: actions/checkout@v5
+      - run: node scripts/cws-publish.mjs --check

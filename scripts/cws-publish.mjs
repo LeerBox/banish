@@ -1,5 +1,6 @@
 // Uploads a package to the Chrome Web Store and submits it for review.
 //   node scripts/cws-publish.mjs dist/banish-vX.Y.Z.zip
+//   node scripts/cws-publish.mjs --check     (read-only: confirms the credentials and shows the item's state)
 // Needs CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN and CWS_EXTENSION_ID in the environment
 // (GitHub Actions secrets; set them once with scripts/cws-auth.mjs).
 import { readFileSync } from 'node:fs';
@@ -32,6 +33,12 @@ const token = (await json(await fetch('https://oauth2.googleapis.com/token', {
 
 const auth = { Authorization: `Bearer ${token}`, 'x-goog-api-version': '2' };
 const item = `https://www.googleapis.com/chromewebstore/v1.1/items/${CWS_EXTENSION_ID}`;
+
+if (zip === '--check') {
+  const info = await json(await fetch(`${item}?projection=DRAFT`, { headers: auth }), 'Reading the item');
+  console.log(`Connected to the Chrome Web Store. Item ${info.id}: version ${info.crxVersion}, upload state ${info.uploadState}.`);
+  process.exit(0);
+}
 
 const upload = await json(await fetch(`https://www.googleapis.com/upload/chromewebstore/v1.1/items/${CWS_EXTENSION_ID}`, {
   method: 'PUT',
