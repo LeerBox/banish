@@ -154,7 +154,7 @@
   }
 
   // ---------- UI mode ----------
-  const DEFAULTS = { notInterested: true, confirmFirst: false, autoSkip: true, showInComments: true, dimBlocked: true };
+  const DEFAULTS = { notInterested: true, confirmFirst: false, autoSkip: true, showInComments: true, dimBlocked: true, universal: true };
   let settings = { ...DEFAULTS };
   let blocked = {}; // username -> { ts, source }
   const busy = new Set();
@@ -582,6 +582,93 @@
     });
   }
 
+  // ---------- LIVE cards inside the For You / Following feed ----------
+  // The card shows the streamer's name as plain text; the username is in the card's /@user/live link.
+  function scanFeedLive() {
+    const self = getSelf();
+    document.querySelectorAll('[class*="DivRecommendLivePlayerContainer"]').forEach((box) => {
+      const link = box.closest('a[href*="/@"]') || box.querySelector('a[href*="/@"]');
+      const user = usernameFromHref(link && link.getAttribute('href'));
+      const tags = box.querySelector('[class*="DivLiveTagWrapper"]');
+      const row = tags && tags.parentElement;
+      let btn = box.querySelector('.tqb-feedlive');
+      if (!user || user === self || !row) { if (btn) btn.remove(); return; }
+      if (!btn) {
+        btn = makeButton('feedlive', user, null);
+        row.appendChild(btn); // "LIVE now · Following · ⊘ Banish"
+      } else if (btn.dataset.tqbUser !== user) {
+        btn.dataset.tqbUser = user;
+        applyState(btn);
+      }
+    });
+  }
+
+  // ---------- universal layer: any other link to an account ----------
+  // Places with a hand-tuned button are skipped; everything else gets either an inline
+  // glyph after a name link, or a corner glyph on a whole-card link (search Users tab, sidebar).
+  const HANDLED = [
+    '[data-e2e^="nav-"]', '[data-e2e="video-desc"]', '[data-e2e^="comment-level-"]',
+    '[data-e2e^="comment-username-"]', '[data-e2e="search-card-user-link"]',
+    '[data-e2e="cinema-creator-identity"]', '[data-e2e="live-header-container"]',
+    '[data-e2e="user-page"] [data-e2e="user-title"]', '[data-e2e="user-subtitle"]',
+    '[data-e2e="explore-item"]', '[data-e2e="search_top-item"]', '[data-e2e="user-post-item"]',
+    '[class*="DivRecommendLivePlayerContainer"]', '[contenteditable]',
+    '[data-e2e="recommend-list-item-container"]', // feed videos have their own button
+  ].join(',');
+
+  // Sit just left of the card's own right-side controls (Follow, ⋯), never on top of them.
+  function positionCardButton(btn, card, cr) {
+    let edge = cr.right;
+    card.querySelectorAll('button, [role="button"]').forEach((el) => {
+      if (el.classList.contains('tqb-btn')) return;
+      const b = el.getBoundingClientRect();
+      if (b.width && b.left > cr.left + cr.width / 2) edge = Math.min(edge, b.left);
+    });
+    btn.style.right = `${Math.round(cr.right - edge + (edge < cr.right ? 8 : 10))}px`;
+  }
+
+  function scanUniversal() {
+    if (!settings.universal) {
+      document.querySelectorAll('.tqb-inline, .tqb-card').forEach((b) => b.remove());
+      return;
+    }
+    const self = getSelf();
+    document.querySelectorAll('a[href*="/@"]').forEach((a) => {
+      if (a.closest('.tqb-btn') || a.closest(HANDLED)) return;
+      // Links nested inside another account link (sidebar rows, search cards): the outer one gets the button.
+      if (a.parentElement && a.parentElement.closest('a[href*="/@"]')) return;
+      const href = a.getAttribute('href') || '';
+      if (/\/@[^/?#]+\/(video|photo)\//.test(href)) return; // links to a post, not an account
+      const user = usernameFromHref(href);
+      if (!user || user === self) return;
+      if (a.dataset.tqbSeen === user && (a.nextElementSibling?.classList.contains('tqb-btn') || a.querySelector(':scope > .tqb-card'))) return;
+      const r = a.getBoundingClientRect();
+      if (!r.width || !r.height || !a.textContent.trim()) return; // avatar-only links: the name link next to it gets the button
+      a.dataset.tqbSeen = user;
+
+      const isCard = r.height > 40 && r.width > 150; // whole row/card is the link
+      if (isCard) {
+        let btn = a.querySelector(':scope > .tqb-card');
+        if (!btn) {
+          if (getComputedStyle(a).position === 'static') a.classList.add('tqb-host');
+          btn = makeButton('card', user, null);
+          a.appendChild(btn);
+        } else if (btn.dataset.tqbUser !== user) { btn.dataset.tqbUser = user; applyState(btn); }
+        positionCardButton(btn, a, r);
+        return;
+      }
+      // Name link: skip if this card already has a Banish button for the same account.
+      const card = a.parentElement && a.parentElement.parentElement;
+      if (card && card.querySelector(`.tqb-btn[data-tqb-user="${CSS.escape(user)}"]`) && !a.nextElementSibling?.classList.contains('tqb-inline')) return;
+      let btn = a.nextElementSibling;
+      if (!btn || !btn.classList.contains('tqb-inline')) {
+        btn = makeButton('inline', user, null);
+        a.after(btn);
+        a.parentElement.dataset.tqbCommentUser = user; // hover reveals the glyph
+      } else if (btn.dataset.tqbUser !== user) { btn.dataset.tqbUser = user; applyState(btn); }
+    });
+  }
+
   // ---------- LIVE: host header + chat ----------
   function scanLive() {
     const header = document.querySelector('[data-e2e="live-header-container"]');
@@ -631,7 +718,10 @@
     scanQueued = true;
     setTimeout(() => {
       scanQueued = false;
-      try { scanFeed(); scanComments(); scanProfile(); scanSearch(); scanLive(); } catch (e) { console.debug('[Banish]', e); }
+      // Hand-tuned placements first, then the universal layer fills every remaining account link.
+      for (const scan of [scanFeed, scanFeedLive, scanComments, scanProfile, scanSearch, scanLive, scanUniversal]) {
+        try { scan(); } catch (e) { console.debug('[Banish]', scan.name, e); }
+      }
     }, 200);
   }
 

@@ -3,6 +3,17 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.2.0] - 2026-10-28
+
+Banish now works **everywhere a username appears** on TikTok.
+
+### Added
+- **Universal layer.** Banish finds every link to an account on any page and adds the right kind of button. You can switch it off in the popup (**Show everywhere**).
+  - **Name links** (Explore cards, follower lists, notifications, the "You may like" panel and more) get a quiet ⊘ next to the name, shown on hover.
+  - **Whole-card links** (search **Users** tab, sidebar **Following accounts**) get a round ⊘ at the card's right edge. It sits left of TikTok's own Follow button, never on top of it.
+  - Places that already have a hand-tuned button (videos, comments, profiles, LIVE) are skipped, and nested links get a single button, so there are no duplicates.
+- **LIVE cards in For You / Following.** The stream preview now reads **LIVE now · Following · ⊘ Banish**. The card shows the streamer's name as plain text, so Banish reads the username from the card's LIVE link.
+
 ## [1.1.3] - 2026-10-28
 
 ### Added

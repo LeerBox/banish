@@ -1,4 +1,4 @@
-const DEFAULTS = { notInterested: true, confirmFirst: false, autoSkip: true, showInComments: true, dimBlocked: true };
+const DEFAULTS = { notInterested: true, confirmFirst: false, autoSkip: true, showInComments: true, dimBlocked: true, universal: true };
 
 chrome.storage.sync.get(DEFAULTS, (s) => {
   for (const key of Object.keys(DEFAULTS)) {

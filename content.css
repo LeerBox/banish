@@ -106,6 +106,57 @@
 .tqb-cinema .tqb-ico { width: 16px; height: 16px; }
 .tqb-cinema:not([aria-disabled="true"]):is(:hover, :focus-visible) { background: rgba(255, 255, 255, .2); }
 
+/* ---------- LIVE card in the feed: pill after the "LIVE now · Following" tags ---------- */
+.tqb-feedlive {
+  height: 30px;
+  padding: 0 11px 0 8px;
+  margin-inline-start: 8px;
+  gap: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .14);
+  font-size: 13px;
+  flex: none;
+}
+.tqb-feedlive .tqb-ico { width: 16px; height: 16px; }
+.tqb-feedlive:not([aria-disabled="true"]):is(:hover, :focus-visible) { background: rgba(255, 255, 255, .24); }
+
+/* ---------- universal layer ---------- */
+/* name links anywhere: same quiet glyph as comments, revealed on hover of the row */
+.tqb-inline {
+  width: 22px; height: 22px;
+  margin-inline-start: 4px;
+  border-radius: 50%;
+  color: var(--ui-text-3, rgba(255, 255, 255, .5));
+  vertical-align: middle;
+  flex: none;
+  opacity: 0;
+}
+.tqb-inline .tqb-ico { width: 15px; height: 15px; }
+.tqb-inline .tqb-l { stroke-width: 2.3; }
+.tqb-inline .tqb-label { display: none; }
+[data-tqb-comment-user]:hover .tqb-inline, .tqb-inline:focus-visible, .tqb-inline.tqb-busy, .tqb-inline.tqb-done { opacity: 1; }
+.tqb-inline:not([aria-disabled="true"]):is(:hover, :focus-visible) { color: var(--ui-text-1, #fff); background: var(--ui-shape-neutral-4, rgba(255, 255, 255, .1)); }
+@media (hover: none) { .tqb-inline { opacity: .6; } }
+
+/* whole-card links (search Users tab, sidebar accounts): glyph at the card's right edge on hover */
+.tqb-card {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(22, 22, 28, .78);
+  border: 1px solid rgba(255, 255, 255, .14);
+  opacity: 0;
+}
+.tqb-card .tqb-ico { width: 16px; height: 16px; }
+.tqb-card .tqb-label { display: none; }
+.tqb-host:hover > .tqb-card, .tqb-card:focus-visible, .tqb-card.tqb-busy, .tqb-card.tqb-done { opacity: 1; }
+.tqb-card:active { transform: translateY(-50%) scale(.94); }
+@media (hover: none) { .tqb-card { opacity: .7; } }
+
 /* ---------- comments, replies & search: quiet inline glyph ---------- */
 .tqb-comment, .tqb-search {
   width: 24px; height: 24px;

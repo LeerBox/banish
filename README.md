@@ -31,6 +31,9 @@
 | Search results | ⊘ next to the author name on each card. |
 | LIVE: host | Round ⊘ button next to TikTok's share button in the stream header. |
 | LIVE: chat | Small ⊘ next to each chatter's name (shows on hover). |
+| LIVE cards in the feed | "LIVE now · Following · ⊘ Banish" on the stream preview. |
+| New full-width player | "⊘ Banish" next to the creator's name and Follow. |
+| Everywhere else | Any username link (Explore, follower lists, notifications, search Users tab, sidebar): ⊘ next to the name, or on the card's right edge. |
 
 ## Install
 1. Download **banish-vX.Y.Z.zip** from the [latest release](https://github.com/LeerBox/banish/releases/latest) and unzip it.
