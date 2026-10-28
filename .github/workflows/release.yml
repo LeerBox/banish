@@ -12,6 +12,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # Set once with `node scripts/cws-auth.mjs`; without them the store step is skipped.
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_EXTENSION_ID: bednefmhihipllpadgkekmedanklndhl
     steps:
       - uses: actions/checkout@v5
         with:
@@ -83,3 +89,8 @@ jobs:
             --title "Banish v$VERSION" \
             --notes-file notes.md \
             --verify-tag $FLAGS
+
+      # Stable releases go to the Chrome Web Store too (uploaded and submitted for review).
+      - name: Publish to Chrome Web Store
+        if: ${{ env.CWS_REFRESH_TOKEN != '' && !contains(github.ref_name, '-') }}
+        run: node scripts/cws-publish.mjs "dist/banish-v$VERSION.zip"
