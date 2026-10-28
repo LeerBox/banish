@@ -3,6 +3,11 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.2.1] - 2026-10-28
+
+### Fixed
+- **LIVE header: the ⊘ button overlapped Follow.** On some streams TikTok renders the share button without its usual identifier, so Banish fell back to placing its button inside Follow's own box. Banish now always goes at the end of the header row, after the streamer's name, Follow and share.
+
 ## [1.2.0] - 2026-10-28
 
 Banish now works **everywhere a username appears** on TikTok.

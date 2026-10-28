@@ -675,18 +675,18 @@
     if (header) {
       const link = header.querySelector('a[href*="/@"]');
       const user = usernameFromHref(link && link.getAttribute('href'));
-      // Sits right after TikTok's share button, in the same row, same 36px circle.
+      // The header row is [streamer pill (avatar, name, Follow)] [share …]. Banish goes at the end of
+      // that row, same 36px circle, so it never lands inside Follow's box even when share is missing.
+      const pill = header.querySelector('[role="link"]');
       const share = header.querySelector('[data-e2e="room-header-share-btn"]');
-      const anchor = share ? share.parentElement : header.querySelector('[data-e2e="room-header-follow-btn"]');
+      const row = pill ? pill.parentElement : share && share.parentElement && share.parentElement.parentElement;
       let btn = header.querySelector('.tqb-live-host');
-      if (!user || user === getSelf() || !anchor) {
+      if (!user || user === getSelf() || !row) {
         if (btn) btn.remove();
-      } else if (!btn) {
-        btn = makeButton('live-host', user, null);
-        anchor.after(btn);
-      } else if (btn.dataset.tqbUser !== user) {
-        btn.dataset.tqbUser = user;
-        applyState(btn);
+      } else {
+        if (!btn) btn = makeButton('live-host', user, null);
+        else if (btn.dataset.tqbUser !== user) { btn.dataset.tqbUser = user; applyState(btn); }
+        if (btn.parentElement !== row || row.lastElementChild !== btn) row.appendChild(btn);
       }
     }
 
