@@ -3,6 +3,11 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.1.3] - 2026-10-28
+
+### Added
+- **Support for TikTok's new full-width "cinema" player.** In this layout the author, ⋯ and action buttons are shared by whichever video is playing, rather than sitting inside each video. Banish now adds a compact **⊘ Banish** button next to the creator's name and Follow at the bottom left, and uses the shared ⋯ menu for *Not interested*. Auto-skip and Alt + B work there too.
+
 ## [1.1.2] - 2026-10-28
 
 Updated for TikTok's late-October redesign.

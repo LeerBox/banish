@@ -93,6 +93,19 @@
 .tqb-video:is(:hover, :focus-visible) .tqb-label, .tqb-video.tqb-busy .tqb-label { opacity: 1; }
 .tqb-video.tqb-done { border-color: rgba(37, 244, 238, .35); }
 
+/* ---------- cinema layout: compact pill after the creator's name and Follow ---------- */
+.tqb-cinema {
+  height: 28px;
+  padding: 0 11px 0 8px;
+  gap: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .12);
+  font-size: 13px;
+  flex: none;
+}
+.tqb-cinema .tqb-ico { width: 16px; height: 16px; }
+.tqb-cinema:not([aria-disabled="true"]):is(:hover, :focus-visible) { background: rgba(255, 255, 255, .2); }
+
 /* ---------- comments, replies & search: quiet inline glyph ---------- */
 .tqb-comment, .tqb-search {
   width: 24px; height: 24px;

@@ -249,7 +249,7 @@
     const u = btn.dataset.tqbUser;
     if (busy.has(u)) return 'Working on it…';
     if (blocked[u]) return 'Already blocked';
-    if (btn.classList.contains('tqb-video') && settings.notInterested) return 'Not interested + Block · Alt+B';
+    if ((btn.classList.contains('tqb-video') || btn.classList.contains('tqb-cinema')) && settings.notInterested) return 'Not interested + Block · Alt+B';
     return 'Block this account';
   }
 
@@ -298,7 +298,7 @@
 
   // ---------- actions ----------
   async function markNotInterested(item) {
-    const more = item.querySelector('[data-e2e="more-menu-icon"]');
+    const more = feedMoreButton(item);
     if (!more) return false;
     const isOpen = () => {
       const el = document.querySelector('[data-e2e="more-menu-popover_not-interested"]');
@@ -416,13 +416,27 @@
     if (next) setTimeout(() => realClick(next), 300);
   }
 
+  // "Cinema" layout (TikTok, late Oct 2026): a full-width player where the author, ⋯ and
+  // action buttons live in one shared overlay for the playing video, not inside each card.
+  const isCinema = () => !!document.querySelector('[data-e2e="anchoring-chrome-host"]');
+  const activeItem = () => [...document.querySelectorAll('[data-e2e="recommend-list-item-container"]')].find(isMostlyVisible);
+
   function feedAuthor(item) {
     const avatar = item.querySelector('[data-e2e="video-author-avatar"]');
     const a = avatar && (avatar.closest('a[href*="/@"]') || avatar.querySelector('a[href*="/@"]'));
     const fromAvatar = usernameFromHref(a && a.getAttribute('href'));
     if (fromAvatar) return fromAvatar;
     const link = [...item.querySelectorAll('a[href*="/@"]')].find((x) => !x.closest('[data-e2e="video-desc"]'));
-    return usernameFromHref(link && link.getAttribute('href'));
+    const fromLink = usernameFromHref(link && link.getAttribute('href'));
+    if (fromLink || !isCinema() || item !== activeItem()) return fromLink;
+    const id = document.querySelector('[data-e2e="cinema-creator-identity"] a[href*="/@"]');
+    return usernameFromHref(id && id.getAttribute('href'));
+  }
+
+  function feedMoreButton(item) {
+    const own = item.querySelector('[data-e2e="more-menu-icon"]');
+    if (own || !isCinema() || item !== activeItem()) return own;
+    return document.querySelector('[data-e2e="anchoring-playback-chrome"] [data-e2e="more-menu-icon"]');
   }
 
   // Place the button on the video's top edge, just left of TikTok's own "more" button,
@@ -440,12 +454,46 @@
     }
   }
 
+  // Cinema layout: one Banish button next to the creator's name and Follow, bottom-left.
+  function scanCinema() {
+    const identity = document.querySelector('[data-e2e="cinema-creator-identity"]');
+    let btn = document.querySelector('.tqb-cinema');
+    if (btn && (!identity || !identity.contains(btn))) { btn.remove(); btn = null; }
+    if (!identity) return;
+    const link = identity.querySelector('a[href*="/@"]');
+    const user = usernameFromHref(link && link.getAttribute('href'));
+    if (!user || user === getSelf()) { if (btn) btn.remove(); return; }
+    if (!btn) {
+      btn = makeButton('cinema', user, activeItem);
+      // Follow is wrapped in TikTok's own boxes; go after the wrapper that sits directly in the row.
+      const follow = identity.querySelector('[data-e2e="cinema-video-info-follow"]');
+      const slot = follow && [...identity.children].find((c) => c.contains(follow));
+      if (slot) slot.after(btn); else identity.appendChild(btn);
+    } else if (btn.dataset.tqbUser !== user) {
+      btn.dataset.tqbUser = user; // the overlay follows the playing video
+      applyState(btn);
+    }
+  }
+
   function scanFeed() {
     const self = getSelf();
+    const cinema = isCinema();
+    if (cinema) {
+      scanCinema();
+      document.querySelectorAll('.tqb-video').forEach((b) => b.remove());
+    }
     document.querySelectorAll('[data-e2e="recommend-list-item-container"]').forEach((item) => {
       const media = item.querySelector('[data-e2e="feed-video"]') || item.querySelector('video')?.closest('section');
       const user = feedAuthor(item);
       if (!media || !user || user === self) return;
+
+      if (cinema) {
+        if (settings.autoSkip && blocked[user] && item.dataset.tqbSkipped !== user && isMostlyVisible(item)) {
+          item.dataset.tqbSkipped = user;
+          goNext();
+        }
+        return;
+      }
 
       let btn = media.querySelector(':scope > .tqb-video');
       if (!btn) {
