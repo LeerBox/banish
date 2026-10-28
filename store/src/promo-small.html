@@ -1,10 +1,24 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"></head>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+  /* Small tile is shown at roughly half size in the store: big shapes, few words, strong contrast. */
+  .tile { position: absolute; inset: 0; overflow: hidden;
+    background: radial-gradient(120% 140% at 0% 0%, #1f5e63 0%, transparent 55%),
+                radial-gradient(120% 140% at 100% 100%, #6b1a32 0%, transparent 55%), #121218; }
+  .row { position: absolute; inset: 0; display: flex; align-items: center; gap: 26px; padding: 0 34px; }
+  .row img { width: 132px; height: 132px; flex: none; border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5), 0 0 0 2px rgba(255,255,255,.12); }
+  .name { font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: #fff; }
+  .tag { margin-top: 12px; font-size: 22px; font-weight: 700; line-height: 1.25; color: rgba(255,255,255,.88); }
+  .tag .grad { font-weight: 800; }
+</style></head>
 <body>
-<div class="bg"></div>
-<div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center;">
-  <img src="../../icons/logo512.png" width="92" height="92" alt="">
-  <div style="font-size:44px; font-weight:800; letter-spacing:-.02em;">Banish</div>
-  <div style="font-size:17px; color:rgba(255,255,255,.7);">Not interested <span class="grad" style="font-weight:700">+ Block</span> in one click</div>
+<div class="tile"></div>
+<div class="row">
+  <img src="../../icons/logo512.png" alt="">
+  <div>
+    <div class="name">Banish</div>
+    <div class="tag">Block TikTok junk<br><span class="grad">in one click</span></div>
+  </div>
 </div>
 </body></html>

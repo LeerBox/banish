@@ -4,3 +4,5 @@ Thumbs.db
 *.crx
 *.pem
 .claude/
+.cws/
+store/step-*.png
