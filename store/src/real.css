@@ -1,0 +1,26 @@
+/* Store screenshots built from real, anonymized captures (store/src/real/*.png), always shown at 1:1. */
+@import url("base.css");
+
+.copy { position: absolute; left: 72px; width: 430px; }
+.copy .kicker { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.copy .kicker img { width: 30px; height: 30px; border-radius: 8px; }
+.copy h1 { font-size: 46px; line-height: 1.08; }
+.copy p.lead { font-size: 19px; margin-top: 20px; }
+.copy .credit { margin-top: 30px; }
+.stack-copy { position: absolute; left: 0; right: 0; top: 54px; text-align: center; }
+.stack-copy .kicker { font-size: 15px; }
+.stack-copy h1 { font-size: 42px; margin-top: 10px; }
+.stack-copy p.lead { font-size: 18px; margin-top: 12px; }
+
+/* browser-window frame around a capture */
+.win { position: absolute; border-radius: 14px; overflow: hidden; background: #000;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.09); }
+.win .bar { height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 14px; background: #17171d; border-bottom: 1px solid rgba(255,255,255,.06); }
+.win .bar i { width: 10px; height: 10px; border-radius: 50%; background: #34343c; }
+.win .bar .url { margin-left: 12px; padding: 4px 12px; border-radius: 999px; background: #0d0d11; color: rgba(255,255,255,.55); font-size: 12px; }
+.shot { background-repeat: no-repeat; background-color: #000; }
+
+.badge { position: absolute; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); font-size: 14px; color: rgba(255,255,255,.85); }
+.badge .g { width: 16px; height: 16px; }
+.privacy { position: absolute; right: 24px; bottom: 16px; font-size: 11px; color: rgba(255,255,255,.32); }

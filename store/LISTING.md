@@ -41,7 +41,7 @@ Source code: https://github.com/LeerBox/banish
 
 **Graphic assets** (in `store/`):
 - Store icon 128×128: `icons/icon128.png`
-- Screenshots 1280×800: `store/screenshot-1.png`, `store/screenshot-2.png`, `store/screenshot-3.png`
+- Screenshots 1280×800: `store/real-1.png` … `store/real-5.png` (real, anonymized captures; sources in `store/src/real-*.html` + `store/src/real/`). Older illustrated set: `store/screenshot-1..3.png`
 - Small promo tile 440×280: `store/promo-small.png`
 - Marquee promo tile 1400×560 (optional): `store/promo-marquee.png`
 
