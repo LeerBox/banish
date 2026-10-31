@@ -3,6 +3,12 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.2.2] - 2026-10-31
+
+### Fixed
+- **Block sometimes did nothing.** TikTok occasionally leaves a profile's Follow, Message and ⋯ buttons as grey loading placeholders, and Banish waited for ⋯ until it gave up. Now, if the buttons haven't appeared after 12 seconds, the hidden page reloads once and tries again.
+- **Already-blocked accounts are recognized right away** by their **Unblock** button, with no waiting.
+
 ## [1.2.1] - 2026-10-28
 
 ### Fixed

@@ -7,7 +7,8 @@
 
   const WORKER_PARAM = 'tqb_block';
   // TikTok's router can strip query params on load, so the hidden frame also carries its job in window.name.
-  const nameJob = /^tqb_block:([a-z0-9]+)$/.exec(window.name || '');
+  // (a ":r" suffix marks that the frame already reloaded itself once after a stuck load)
+  const nameJob = /^tqb_block:([a-z0-9]+)(:r)?$/.exec(window.name || '');
   const workerId = new URLSearchParams(location.search).get(WORKER_PARAM) || (nameJob && nameJob[1]);
 
   // ---------- shared helpers ----------
@@ -118,12 +119,23 @@
     if (window !== window.top) window.parent.postMessage({ tqb: id, alive: true }, location.origin);
     let step = 'Profile didn’t load';
     try {
-      const more = await waitFor(() => {
+      // Wait for ⋯ — or for "Unblock", which a blocked profile shows instead of ⋯.
+      const ready = () => {
+        if (isBlockedProfile()) return 'blocked';
         const el = document.querySelector('[data-e2e="user-more"]');
         return isVisible(el) ? el : null;
-      }, 20000);
+      };
+      let more = await waitFor(ready, 12000).catch(() => null);
+      if (!more && !nameJob?.[2] && window !== window.top) {
+        // The profile's buttons sometimes stay as grey placeholders; reload this hidden page once.
+        log('buttons never appeared — reloading once');
+        window.name = `tqb_block:${id}:r`;
+        location.reload();
+        return;
+      }
+      if (!more) more = await waitFor(ready, 12000);
+      if (more === 'blocked') return report({ ok: true, already: true });
       log('profile loaded');
-      if (isBlockedProfile()) return report({ ok: true, already: true });
 
       step = 'Block option not found in the ⋯ menu';
       let item = null;
@@ -342,7 +354,7 @@
       const timer = setTimeout(() => finish({
         ok: false,
         error: alive ? 'Timed out while blocking' : 'Hidden profile frame never started',
-      }), 25000);
+      }), 40000); // room for one self-reload of a stuck profile
       document.documentElement.appendChild(frame);
     });
   }
