@@ -3,6 +3,11 @@
 All notable changes to Banish are listed here.
 Each section becomes the notes of its GitHub release.
 
+## [1.2.3] - 2026-11-01
+
+### Fixed
+- **A ⊘ button sat on top of the LIVE preview video.** On the LIVE discover page, TikTok overlays the streamer's name row on the playing preview, and Banish put its button there. Banish now never places a button over a playing video, and skips large media tiles.
+
 ## [1.2.2] - 2026-10-31
 
 ### Fixed

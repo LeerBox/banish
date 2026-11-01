@@ -645,6 +645,9 @@
       return;
     }
     const self = getSelf();
+    const players = [...document.querySelectorAll('video, canvas')]
+      .map((m) => m.getBoundingClientRect())
+      .filter((p) => p.width > 150 && p.height > 150);
     document.querySelectorAll('a[href*="/@"]').forEach((a) => {
       if (a.closest('.tqb-btn') || a.closest(HANDLED)) return;
       // Links nested inside another account link (sidebar rows, search cards): the outer one gets the button.
@@ -653,8 +656,14 @@
       if (/\/@[^/?#]+\/(video|photo)\//.test(href)) return; // links to a post, not an account
       const user = usernameFromHref(href);
       if (!user || user === self) return;
-      if (a.dataset.tqbSeen === user && (a.nextElementSibling?.classList.contains('tqb-btn') || a.querySelector(':scope > .tqb-card'))) return;
       const r = a.getBoundingClientRect();
+      // Never stack on video: skip media tiles, and rows TikTok overlays on a playing preview (LIVE discover).
+      if (r.height > 160 || a.querySelector('video, canvas') || players.some((p) => r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top)) {
+        a.querySelector(':scope > .tqb-card')?.remove();
+        if (a.nextElementSibling?.classList.contains('tqb-inline')) a.nextElementSibling.remove();
+        return;
+      }
+      if (a.dataset.tqbSeen === user && (a.nextElementSibling?.classList.contains('tqb-btn') || a.querySelector(':scope > .tqb-card'))) return;
       if (!r.width || !r.height || !a.textContent.trim()) return; // avatar-only links: the name link next to it gets the button
       a.dataset.tqbSeen = user;
 
